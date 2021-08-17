@@ -2,23 +2,28 @@ import SwiftUI
 
 struct ProductListPageView: View {
     @State var products: [FetchProductsQuery.Data.Product] = []
+    @EnvironmentObject var cartState: CartState
+    @State var isCartViewPresented: Bool = false
     var body: some View {
         List(products, id: \.id) { product in
-            HStack(alignment: .top) {
-                RemoteImage(urlString: product.imageUrl)
-                    .frame(width: /*@START_MENU_TOKEN@*/100/*@END_MENU_TOKEN@*/, height: 100)
-                VStack(alignment: .leading) {
-                    Text(product.name)
-                    Spacer()
-                        .frame(height: 8)
-                    Text(product.summary)
-                    Spacer()
-                    Text("\(product.price)円")
-                        .frame(maxWidth: .infinity, alignment: .trailing)
+            NavigationLink(destination: ProductDetailPageView(product: product)) {
+                HStack(alignment: .top) {
+                    RemoteImage(urlString: product.imageUrl)
+                        .frame(width: /*@START_MENU_TOKEN@*/100/*@END_MENU_TOKEN@*/, height: 100)
+                    VStack(alignment: .leading) {
+                        Text(product.name)
+                        Spacer()
+                            .frame(height: 8)
+                        Text(product.summary)
+                        Spacer()
+                        Text("\(product.price)円")
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                    }
+                    .padding(.vertical, 8)
                 }
-                .padding(.vertical, 8)
             }
         }
+        .listStyle(PlainListStyle())
         .onAppear {
             Network.shared.apollo.fetch(query: FetchProductsQuery()) { result in
                 switch result {
@@ -30,6 +35,23 @@ struct ProductListPageView: View {
             }
         }
         .navigationTitle("MiniMart")
+        .toolbar {
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                Button(action: {
+                    self.isCartViewPresented = true
+                }) {
+                    VStack{
+                        Image(systemName: "folder")
+                        Text("(\(cartState.totalProductCounts))")
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $isCartViewPresented) {
+            NavigationView {
+                CartPageView(isCartViewPresented: $isCartViewPresented)
+            }
+        }
     }
 }
 
@@ -51,6 +73,9 @@ struct ProductListPageView_Previews: PreviewProvider {
         ),
     ]
     static var previews: some View {
-        ProductListPageView(products: products)
+        NavigationView {
+            ProductListPageView(products: products)
+        }
+        .environmentObject(CartState())
     }
 }
