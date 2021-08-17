@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ProductListPageView: View {
     @State var products: [FetchProductsQuery.Data.Product] = []
+    @EnvironmentObject var cartState: CartState
     @State var isCartViewPresented: Bool = false
     var body: some View {
         List(products, id: \.id) { product in
@@ -39,13 +40,16 @@ struct ProductListPageView: View {
                 Button(action: {
                     self.isCartViewPresented = true
                 }) {
-                    Image(systemName: "folder")
+                    VStack{
+                        Image(systemName: "folder")
+                        Text("(\(cartState.totalProductCounts))")
+                    }
                 }
             }
         }
         .sheet(isPresented: $isCartViewPresented) {
             NavigationView {
-                CartPageView()
+                CartPageView(isCartViewPresented: $isCartViewPresented)
             }
         }
     }
@@ -69,6 +73,9 @@ struct ProductListPageView_Previews: PreviewProvider {
         ),
     ]
     static var previews: some View {
-        ProductListPageView(products: products)
+        NavigationView {
+            ProductListPageView(products: products)
+        }
+        .environmentObject(CartState())
     }
 }
